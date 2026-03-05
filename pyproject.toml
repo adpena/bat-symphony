@@ -1,0 +1,32 @@
+[project]
+name = "bat-symphony"
+version = "0.1.0"
+description = "Self-improving agentic system on BAT00"
+requires-python = ">= 3.11"
+dependencies = [
+    "httpx>=0.27",
+    "uvicorn>=0.34",
+    "fastapi>=0.115",
+    "pydantic>=2.10",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.25",
+    "ruff>=0.9",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.backends"
