@@ -49,13 +49,16 @@ class OllamaClient:
         duration = time.monotonic() - start
 
         data = resp.json()
-        content = data.get("message", {}).get("content", "")
+        msg = data.get("message", {})
+        content = msg.get("content", "")
+        thinking = msg.get("thinking", "")
         prompt_hash = hashlib.sha256(
             json.dumps(messages, sort_keys=True).encode()
         ).hexdigest()[:12]
 
         return {
             "content": content,
+            "thinking": thinking,
             "model": model,
             "duration_s": round(duration, 2),
             "prompt_hash": prompt_hash,
