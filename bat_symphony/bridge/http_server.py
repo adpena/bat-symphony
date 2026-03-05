@@ -79,4 +79,56 @@ def create_app(config: Config) -> FastAPI:
         router = AgentRouter(config, MemoryStore(state_dir=config.state_dir))
         return await router.route(agent_name, task, task_type)
 
+    @app.post("/bus/publish")
+    async def bus_publish(channel: str = "general", message: str = "") -> dict[str, Any]:
+        """Publish to agent bus."""
+        from bat_symphony.bridge.agent_bus import AgentBusBridge
+        from bat_symphony.memory.store import MemoryStore
+        bus = AgentBusBridge(config, MemoryStore(state_dir=config.state_dir))
+        result = await bus.broadcast(channel, {"content": message})
+        return {"published": True, "entry": result}
+
+    @app.get("/bus/channels")
+    async def bus_channels() -> dict[str, Any]:
+        """List agent bus channels."""
+        from bat_symphony.bridge.agent_bus import AgentBusBridge
+        from bat_symphony.memory.store import MemoryStore
+        bus = AgentBusBridge(config, MemoryStore(state_dir=config.state_dir))
+        return {"channels": bus.list_channels()}
+
+    @app.post("/telemetry/emit")
+    async def telemetry_emit(source: str = "bat00", event: str = "", severity: str = "info") -> dict[str, Any]:
+        """Emit a telemetry event."""
+        from bat_symphony.bridge.telemetry import TelemetryCollector
+        collector = TelemetryCollector(config)
+        entry = collector.emit(source=source, event=event, severity=severity)
+        return {"emitted": True, "entry": entry}
+
+    @app.get("/telemetry/summary")
+    async def telemetry_summary(days: int = 1) -> dict[str, Any]:
+        """Get telemetry summary."""
+        from bat_symphony.bridge.telemetry import TelemetryCollector
+        collector = TelemetryCollector(config)
+        return collector.summary(days=days)
+
+    @app.post("/shared/store")
+    async def shared_store(key: str = "", value: str = "", tags: str = "") -> dict[str, Any]:
+        """Store shared knowledge."""
+        from bat_symphony.bridge.shared_memory import SharedMemory
+        from bat_symphony.memory.store import MemoryStore
+        sm = SharedMemory(config, MemoryStore(state_dir=config.state_dir))
+        tag_list = [t.strip() for t in tags.split(",") if t.strip()] if tags else []
+        entry = sm.store(key=key, value=value, tags=tag_list)
+        return {"stored": True, "entry": entry}
+
+    @app.get("/shared/retrieve")
+    async def shared_retrieve(key: str | None = None, tags: str = "", limit: int = 50) -> dict[str, Any]:
+        """Retrieve shared knowledge."""
+        from bat_symphony.bridge.shared_memory import SharedMemory
+        from bat_symphony.memory.store import MemoryStore
+        sm = SharedMemory(config, MemoryStore(state_dir=config.state_dir))
+        tag_list = [t.strip() for t in tags.split(",") if t.strip()] if tags else None
+        entries = sm.retrieve(key=key, tags=tag_list, limit=limit)
+        return {"entries": entries, "count": len(entries)}
+
     return app

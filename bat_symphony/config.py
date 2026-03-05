@@ -37,3 +37,12 @@ class Config:
         # Mac bridge
         self.mac_host: str = os.getenv("BAT_MAC_HOST", "192.168.1.170")
         self.mac_ssh_user: str = os.getenv("BAT_MAC_SSH_USER", "adpena")
+
+        # Telemetry
+        self.telemetry_enabled: bool = os.getenv("BAT_TELEMETRY_ENABLED", "true").lower() == "true"
+
+        # Agent bus
+        self.mac_symphony_port: int = int(os.getenv("BAT_MAC_SYMPHONY_PORT", "4000"))
+
+        # Shared memory
+        self.shared_memory_sync_interval_s: int = int(os.getenv("BAT_SHARED_MEMORY_SYNC_S", "300"))
