@@ -9,9 +9,9 @@ $UvPath = "$env:USERPROFILE\.local\bin\uv.exe"
 switch ($Action) {
     "start" {
         if (Test-Path $PidFile) {
-            $pid = Get-Content $PidFile
-            if (Get-Process -Id $pid -ErrorAction SilentlyContinue) {
-                Write-Host "Daemon already running (PID $pid)"
+            $dpid = Get-Content $PidFile
+            if (Get-Process -Id $dpid -ErrorAction SilentlyContinue) {
+                Write-Host "Daemon already running (PID $dpid)"
                 exit 0
             }
         }
@@ -22,8 +22,8 @@ switch ($Action) {
     }
     "stop" {
         if (Test-Path $PidFile) {
-            $pid = Get-Content $PidFile
-            Stop-Process -Id $pid -ErrorAction SilentlyContinue
+            $dpid = Get-Content $PidFile
+            Stop-Process -Id $dpid -ErrorAction SilentlyContinue
             Remove-Item $PidFile
             Write-Host "Daemon stopped"
         } else {
@@ -32,9 +32,9 @@ switch ($Action) {
     }
     "status" {
         if (Test-Path $PidFile) {
-            $pid = Get-Content $PidFile
-            if (Get-Process -Id $pid -ErrorAction SilentlyContinue) {
-                Write-Host "Daemon running (PID $pid)"
+            $dpid = Get-Content $PidFile
+            if (Get-Process -Id $dpid -ErrorAction SilentlyContinue) {
+                Write-Host "Daemon running (PID $dpid)"
                 try {
                     $resp = Invoke-RestMethod -Uri "http://localhost:8787/health" -TimeoutSec 5
                     $resp | ConvertTo-Json
