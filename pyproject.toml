@@ -29,4 +29,4 @@ asyncio_mode = "auto"
 
 [build-system]
 requires = ["hatchling"]
-build-backend = "hatchling.backends"
+build-backend = "hatchling.build"
