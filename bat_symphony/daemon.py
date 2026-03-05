@@ -14,6 +14,7 @@ from bat_symphony.bridge.http_server import create_app
 from bat_symphony.config import Config
 from bat_symphony.memory.store import MemoryStore
 from bat_symphony.ollama import OllamaClient
+from bat_symphony.learner.loop import LearningLoop
 from bat_symphony.watchers.git_watcher import GitWatcher
 
 logger = logging.getLogger("bat_symphony")
@@ -25,6 +26,7 @@ class BatSymphonyDaemon:
         self.memory = MemoryStore(state_dir=self.config.state_dir)
         self.ollama = OllamaClient(base_url=self.config.ollama_url)
         self.git_watcher = GitWatcher(repos=self.config.watch_repos)
+        self.learning_loop = LearningLoop(config=self.config, memory=self.memory, ollama=self.ollama)
         self.app: FastAPI = create_app(self.config)
         self._running = False
 
@@ -48,6 +50,17 @@ class BatSymphonyDaemon:
                 logger.warning("Ollama health check failed")
             await asyncio.sleep(30)
 
+    async def _learning_loop(self):
+        """Periodically run the learning cycle."""
+        while self._running:
+            if self.learning_loop.should_reflect():
+                try:
+                    result = await self.learning_loop.run_cycle()
+                    logger.info("Learning cycle result: %s", result)
+                except Exception:
+                    logger.exception("Learning cycle failed")
+            await asyncio.sleep(self.config.git_poll_interval_s)
+
     async def start(self):
         self._running = True
         logger.info("BatSymphony daemon starting on :%d", self.config.http_port)
@@ -65,6 +78,7 @@ class BatSymphonyDaemon:
             server.serve(),
             self._git_poll_loop(),
             self._health_check_loop(),
+            self._learning_loop(),
         )
 
     async def stop(self):

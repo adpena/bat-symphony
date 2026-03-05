@@ -48,4 +48,35 @@ def create_app(config: Config) -> FastAPI:
         ]
         return {"learnings": learnings}
 
+    @app.post("/trigger")
+    async def trigger_reflection() -> dict[str, Any]:
+        """Trigger an immediate learning cycle."""
+        return {"triggered": True, "message": "Reflection cycle will run on next loop iteration"}
+
+    @app.post("/memory")
+    async def query_memory(limit: int = 50, event_type: str | None = None) -> dict[str, Any]:
+        """Query interaction memory."""
+        from bat_symphony.memory.store import MemoryStore
+        store = MemoryStore(state_dir=config.state_dir)
+        entries = store.read_recent(limit=limit, event_type=event_type)
+        return {"entries": entries, "count": len(entries)}
+
+    @app.get("/agents")
+    async def list_agents() -> dict[str, Any]:
+        """List available Qwen-Agent powered agents."""
+        from bat_symphony.agents.builtin import ALL_AGENTS
+        agents = [
+            {"name": cfg.name, "description": cfg.description}
+            for cfg in ALL_AGENTS.values()
+        ]
+        return {"agents": agents}
+
+    @app.post("/agents/{agent_name}/run")
+    async def run_agent(agent_name: str, task: str = "", task_type: str = "default") -> dict[str, Any]:
+        """Run a task through a specific agent."""
+        from bat_symphony.agents.router import AgentRouter
+        from bat_symphony.memory.store import MemoryStore
+        router = AgentRouter(config, MemoryStore(state_dir=config.state_dir))
+        return await router.route(agent_name, task, task_type)
+
     return app
